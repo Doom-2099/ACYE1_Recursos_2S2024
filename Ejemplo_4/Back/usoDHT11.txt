@@ -1,0 +1,20 @@
+DHT11 CON PYTHON
+
+1.- sudo pip install Adafruit_Python_DHT
+
+import Adafruit_DHT
+
+sensor = Adafruit_DHT.DHT11
+pin = 4 (BOARD)
+humedad, temperatura = Adafruit_DHT.read_retry(sensor, pin)
+print("Humedad: ", humedad)
+print("Temperatura: ", temperatura)
+
+
+===============================================================
+MONGO CON PYTHON
+
+sudo pip install pymongo
+
+from pymongo import MongoClient
+
