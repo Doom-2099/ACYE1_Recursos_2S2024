@@ -1,0 +1,28 @@
+Comandos para compilar archivos de ensamblador ARM64
+
+1 Crear el archivo de nuestro codigo fuente con extension .s
+ - main.s
+
+2 Declarar punto de inicio del programa
+    - .global _main, _start, _inicio
+
+3 Declarar el segmento de datos
+    - .data
+    A partir de esta etiqueta se definiran todas las
+    variables necesarias y que se van a utilizar en el codigo
+
+4 Hacer el codigo en ensamblador
+    - mov r1, r2
+    - add r2, r2, r3
+
+5 Ensmblar el codigo
+    - aarch-linux-gnu-as -o main.o main.s
+    - Revisar que no tenga errores
+
+6 Linking del codigo objeto que generara el ejecutable
+    - aarch-linux-gnu-ld -o main main.o
+
+7 Ejecutar nuestro programa
+    - ./main
+
+
