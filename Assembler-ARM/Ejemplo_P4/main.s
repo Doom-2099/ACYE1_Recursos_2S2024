@@ -6,6 +6,7 @@
 .global atoi
 .global itoa
 .global bubbleSort
+.global quicksort
 .global _start
 
 .data
@@ -378,6 +379,136 @@ bubbleSort:
 
     RET
 
+quicksort:
+    // x0 = array [direccion de memoria]
+    // x1 = inicio
+    // x2 = fin
+
+    // if (inicio >= fin)
+    CMP x1, x2
+    BGE quicksort_final
+    // endif
+
+    LDRH w3, [x0, x1, LSL 1]  // pivote -> w3 | pivote = array[inicio]
+
+    // izq = x4, der = x5
+    ADD x4, x1, 1   // izq = inicio + 1
+    MOV x5, x2      // der = fin
+
+    // while(izq <= der)
+    quicksort_while_principal:
+
+        // while(izq <= fin && array[izq] < pivote)
+        quicksort_while_interno_1:
+
+            // primera condicion: izq <= fin
+            CMP x4, x2
+            BGT quicksort_while_interno_2
+
+            // segunda condicion: array[izq] < pivote
+            LDRH w6, [x0, x4, LSL 1]    // array[izq]
+            CMP w6, w3
+            BGE quicksort_while_interno_2
+
+            ADD x4, x4, 1   // izq++
+            B quicksort_while_interno_1
+
+
+        // while(der > inicio && array[der] >= pivote)
+        quicksort_while_interno_2:
+
+            // primera condicion: der > inicio
+            CMP x5, x1
+            BLE quicksort_intercambio
+
+            // segunda condicion: array[der] >= pivote
+            LDRH w6, [x0, x5, LSL 1]    // array[der]
+            CMP w6, w3
+            BLT quicksort_intercambio
+
+            SUB x5, x5, 1   // der--
+            B quicksort_while_interno_2
+
+
+        // if(izq < der)
+        quicksort_intercambio:
+
+            // condicion: izq < der
+            CMP x4, x5
+            BGE quicksort_while_continuacion
+
+            // hacer intercambio
+            LDRH w6, [x0, x4, LSL 1]    // array[izq]
+            LDRH w7, [x0, x5, LSL 1]    // array[der]
+
+            STRH w7, [x0, x4, LSL 1]    // array[izq] = array[der]
+            STRH w6, [x0, x5, LSL 1]    // array[der] = array[izq]
+
+
+        // condicion while principal: izq <= der
+        quicksort_while_continuacion:
+            CMP x4, x5
+            BLE quicksort_while_principal
+            
+    
+    // bloque condicionante: if(der > inicio)
+    CMP x5, x1
+    BLE quicksort_recursividad
+
+    // hacer intercambio
+    LDRH w6, [x0, x1, LSL 1]    // array[inicio]
+    LDRH w7, [x0, x5, LSL 1]    // array[der]
+
+    STRH w7, [x0, x1, LSL 1]    // array[inicio] = array[der]
+    STRH w6, [x0, x5, LSL 1]    // array[der] = array[inicio]
+
+    quicksort_recursividad:
+        // PRIMERA RECURSIVIDAD
+        // almacenar en la pila los registros  x1 = inicio x5 = der  x2 = fin
+        STP x1, x2, [SP, -16]!
+        STR x5, [SP, -8]!
+
+        // actualizar parametro: fin = der - 1
+        SUB x2, x5, 1
+        
+        // almacenar puntero del progrma en la pila
+        STP x29, x30, [SP, -16]!
+
+        // primera llamada recursiva: quicksort(array, inicio, der - 1)
+        BL quicksort
+
+        // recuperar puntero del programa de la pila
+        LDP x29, x30, [SP], 16
+
+        // recuperar registro  x1 = inicio x5 = der  x2 = fin
+        LDR x5, [SP], 8
+        LDP x1, x2, [SP], 16
+
+
+        // SEGUNDA RECURSIVIDAD
+        // almacenar en la pila los registros  x1 = inicio x5 = der  x2 = fin
+        STP x1, x2, [SP, -16]!
+        STR x5, [SP, -8]!
+
+        // actualizar parametro: inicio = der + 1
+        ADD x1, x5, 1
+        
+        // almacenar puntero del progrma en la pila
+        STP x29, x30, [SP, -16]!
+
+        // primera llamada recursiva: quicksort(array, inicio, der - 1)
+        BL quicksort
+
+        // recuperar puntero del programa de la pila
+        LDP x29, x30, [SP], 16
+
+        // recuperar registros x1 = inicio x5 = der  x2 = fin
+        LDR x5, [SP], 8
+        LDP x1, x2, [SP], 16
+
+    quicksort_final:
+        RET
+
 // Etiqueta de inicio del programa
 _start:
     // Limpiar salida de la terminal
@@ -403,7 +534,13 @@ _start:
     // Llamar Algoritmo de Ordenamiento Burbuja
     getTime timeStart
 
-    BL bubbleSort
+    LDR x0, =array
+    MOV x1, 0
+    LDR x2, =count
+    LDR x2, [x2] // length => cantidad de numeros leidos del csv
+    SUB x2, x2, 1
+    //BL bubbleSort
+    BL quicksort
 
     getTime timeEnd
 

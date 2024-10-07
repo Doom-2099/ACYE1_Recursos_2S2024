@@ -116,9 +116,7 @@ itoa: // int to ascii
     MOV w2, 10000
     CMP w0, 0
     BGT i_convertirAscii
-
-    CMP w0, 0
-    BEQ i_zero
+    CBZ w0, i_zero
 
     B i_negative
 
@@ -135,11 +133,9 @@ itoa: // int to ascii
         NEG w0, w0
 
     i_convertirAscii:
+        CBZ w2, i_endConversion
         UDIV w3, w0, w2
         CBZ w3, i_reduceBase
-
-        CMP w2, 1
-        BLE i_unidades
 
         MOV w5, w3
         ADD w5, w5, 48
@@ -149,12 +145,12 @@ itoa: // int to ascii
         MUL w3, w3, w2
         SUB w0, w0, w3
 
+        CMP w2, 1
+        BLE i_endConversion
+
         i_reduceBase:
             MOV w6, 10
             UDIV w2, w2, w6
-
-            CMP w2, 1
-            BLE i_unidades
 
             CBNZ w10, i_addZero
             B i_convertirAscii
@@ -165,14 +161,6 @@ itoa: // int to ascii
             MOV w5, 48
             STRB w5, [x1], 1
             B i_convertirAscii
-
-        i_unidades:
-            CMP w2, 1
-            BGT i_convertirAscii
-            ADD x10, x10, 1
-            MOV w5, w0
-            ADD w5, w5, 48
-            STRB w5, [x1], 1
 
     i_endConversion:
         ADD x10, x10, x12
