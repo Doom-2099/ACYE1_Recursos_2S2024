@@ -1,10 +1,12 @@
 .global itoa
 .global atoi
 .global proc_import
+.global proc_sum
 .global import_data
 .global readCSV
 .global openFile
 .global closeFile
+.global proc_cls_num
 .global _start
 
 .data
@@ -36,9 +38,16 @@ cmdimp:
 cmdsep:
     .asciz "SEPARADO POR COMA"
 
+cmdSum:
+    .asciz "SUMA"
+
 errorImport:
     .asciz "Error En El Comando De Importación"
     lenError = .- errorImport
+
+errorSuma:
+    .asciz "Error En El Comando De Suma"
+    lenErrorSuma = .- errorSuma
 
 errorOpenFile:
     .asciz "Error al abrir el archivo\n"
@@ -87,6 +96,12 @@ character:
 
 count:
     .zero 8
+
+op1:
+    .zero 2
+
+op2:
+    .zero 2
     
 
 .text
@@ -274,7 +289,7 @@ import_data:
         LDR x4, =character
         LDRB w2, [x4]
 
-        CMP w2, 44
+        CMP w2, 9
         BEQ getIndex
 
         CMP w2, 10
@@ -328,7 +343,7 @@ readCSV:
         read x11, character, 1
         LDR x4, =character
         LDRB w3, [x4]
-        CMP w3, 44
+        CMP w3, 9
         BEQ rd_cv_num
 
         CMP w3, 10
@@ -468,6 +483,224 @@ print_matrix:
 
         RET
 
+proc_sum:
+    STP x29, x30, [SP, -16]!
+
+    BL proc_cls_num
+
+    LDP x29, x30, [SP], 16
+
+    LDR x0, =cmdSum
+    LDR x1, =bufferComando
+
+    sum_loop:
+        LDRB w2, [x0], 1
+        LDRB w3, [x1], 1
+
+        CBZ w2, get_first_op
+
+        CMP w2, w3
+        BNE sum_error
+
+        B sum_loop
+
+        sum_error:
+            print 1, errorImport, lenErrorSuma
+            B end_proc_sum
+
+    get_first_op:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+        
+        CMP w2, 65
+        BLT validate_num_prev
+
+        CMP w2, 75
+        BGT end_proc_sum
+
+        getOpCell:
+            SUB w16, w2, 65 // Columna
+
+            getRow:
+                LDRB w2, [x1], 1
+                
+                CMP w2, 32
+                BEQ convert_num
+
+                STRB w2, [x0], 1
+
+                B getRow
+
+            convert_num:
+                LDR x5, =num
+                LDR x8, =num
+
+                STP x29, x30, [SP, -16]!
+
+                BL atoi
+
+                LDP x29, x30, [SP], 16
+
+                SUB x9, x9, 1
+                LDR x20, =arreglo
+                MOV x22, 6
+                MUL x22, x9, x22
+                ADD x22, x16, x22
+                
+                LDRH w9, [x20, x22, LSL #1]
+
+                LDR x10, =op1
+                STRB w9, [x10]
+
+                B cont_cmd_sum
+
+        validate_num_prev:
+            SUB x1, x1, 1
+
+        validate_num:
+            LDRB w2, [x1], 1
+
+            CMP w2, 32
+            BEQ save_num
+
+            STRB w2, [x0], 1
+
+            B validate_num
+
+            save_num:
+                LDR x5, =num
+                LDR x8, =num
+
+                STP x29, x30, [SP, -16]!
+
+                BL atoi
+
+                LDP x29, x30, [SP], 16
+
+                LDR x10, =op1
+                STRH w9, [x10]
+
+    cont_cmd_sum:
+        MOV x2, x1
+
+        STP x29, x30, [SP, -16]!
+
+        BL proc_cls_num
+
+        LDP x29, x30, [SP], 16
+
+        MOV x1, x2
+        LDRB w2, [x1], 2
+        CMP w2, 89
+        BNE end_proc_sum
+
+    get_second_op:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+
+        CMP w2, 65
+        BLT validate_num_prev_2
+
+        CMP w2, 75
+        BGT end_proc_sum
+
+        getOp2Cell:
+            SUB w16, w2, 65
+
+            getRow2:
+                LDRB w2, [x1], 1
+
+                CMP w2, 10
+                BEQ convert_num2
+
+                STRB w2, [x0], 1
+
+                B getRow2
+
+            convert_num2:
+                LDR x5, =num
+                LDR x8, =num
+
+                STP x29, x30, [SP, -16]!
+
+                BL atoi
+
+                LDP x29, x30, [SP], 16
+
+                SUB x9, x9, 1
+                LDR x20, =arreglo
+                MOV x22, 6
+                MUL x22, x9, x22
+                ADD x22, x16, x22
+
+                LDRH w9, [x20, x22, LSL #1]
+
+                LDR x10, =op2
+                STRB w9, [x10]
+
+                B execute_sum
+
+        validate_num_prev_2:
+            SUB x1, x1, 1
+        validate_num2:
+            LDRB w2, [x1], 1
+
+            CMP w2, 10
+            BEQ save_num2
+
+            STRB w2, [x0], 1
+
+            B validate_num2
+
+            save_num2:
+                LDR x5, =num
+                LDR x8, =num
+
+                STP x29, x30, [SP, -16]!
+
+                BL atoi
+
+                LDP x29, x30, [SP], 16
+
+                LDR x10, =op2
+                STRH w9, [x10]
+
+    execute_sum:
+        LDR x0, =op1
+        LDR x1, =op2
+
+        LDRH w2, [x0]
+        LDRH w3, [x1]
+
+        ADD w2, w2, w3
+    end_proc_sum:
+        STP x29, x30, [SP, -16]!
+
+        BL proc_cls_num
+
+        LDP x29, x30, [SP], 16
+
+        MOV x0, x2
+        LDR x1, =num
+
+        STP x29, x30, [SP, -16]!
+        BL itoa
+        LDP x29, x30, [SP], 16
+
+        RET
+
+proc_cls_num:
+    LDR x0, =num
+    MOV x1, 1
+
+    loop_cls:
+        STRH wzr, [x0], 1
+        ADD x1, x1, 1
+        CMP x1, 8
+        BNE loop_cls
+
+        RET
+
 _start:
         BL print_matrix
 
@@ -478,6 +711,20 @@ _start:
         BL import_data
 
         BL print_matrix
+
+        LDR x0, =bufferComando
+        MOV x1, 1
+
+        cls_buffer_cmd:
+            STRB wzr, [x0], 1
+            ADD x1, x1, 1
+
+            CMP x1, 50
+            BNE cls_buffer_cmd
+
+        read 0, bufferComando, 50
+
+        BL proc_sum
 
     exit: 
         MOV x0, 0
