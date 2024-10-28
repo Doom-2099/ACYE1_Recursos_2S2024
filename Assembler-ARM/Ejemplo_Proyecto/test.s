@@ -7,6 +7,7 @@
 .global openFile
 .global closeFile
 .global proc_cls_num
+.global proc_fill
 .global _start
 
 .data
@@ -41,6 +42,12 @@ cmdsep:
 cmdSum:
     .asciz "SUMA"
 
+cmdLlenar:
+    .asciz "LLENAR DESDE"
+
+cmdHasta:
+    .asciz "HASTA"
+
 errorImport:
     .asciz "Error En El Comando De Importación"
     lenError = .- errorImport
@@ -49,6 +56,10 @@ errorSuma:
     .asciz "Error En El Comando De Suma"
     lenErrorSuma = .- errorSuma
 
+errorFill:
+    .asciz "Error En El Comando De Llenar\n"
+    lenErrorFill = .- errorFill
+
 errorOpenFile:
     .asciz "Error al abrir el archivo\n"
     lenErrOpenFile = .- errorOpenFile
@@ -56,6 +67,10 @@ errorOpenFile:
 getIndexMsg:
     .asciz "Ingrese la columna para el encabezado "
     lenGetIndexMsg = .- getIndexMsg
+
+getValueForCell:
+    .asciz "Ingrese El Valor Para La Celda "
+    lenGetValueForCell = . - getValueForCell
 
 readSuccess:
     .asciz "El Archivo Se Ha Leido Correctamente\n"
@@ -101,6 +116,9 @@ op1:
     .zero 2
 
 op2:
+    .zero 2
+
+rowcol:
     .zero 2
     
 
@@ -484,12 +502,12 @@ print_matrix:
         RET
 
 proc_sum:
+    // limpiar variable para almacenar numeros
     STP x29, x30, [SP, -16]!
-
     BL proc_cls_num
-
     LDP x29, x30, [SP], 16
-
+    //SUMA A65 Y B54
+    // comparar comando SUMA
     LDR x0, =cmdSum
     LDR x1, =bufferComando
 
@@ -508,6 +526,8 @@ proc_sum:
             print 1, errorImport, lenErrorSuma
             B end_proc_sum
 
+    // obtener primer operador
+    // A5 | 5
     get_first_op:
         LDR x0, =num
         LDRB w2, [x1], 1
@@ -519,7 +539,7 @@ proc_sum:
         BGT end_proc_sum
 
         getOpCell:
-            SUB w16, w2, 65 // Columna
+            SUB w16, w2, 65 // Obtener inidice de la columna
 
             getRow:
                 LDRB w2, [x1], 1
@@ -536,9 +556,7 @@ proc_sum:
                 LDR x8, =num
 
                 STP x29, x30, [SP, -16]!
-
                 BL atoi
-
                 LDP x29, x30, [SP], 16
 
                 SUB x9, x9, 1
@@ -689,6 +707,268 @@ proc_sum:
 
         RET
 
+proc_fill:
+    STP x29, x30, [SP, -16]!
+    BL proc_cls_num
+    LDP x29, x30, [SP], 16
+
+    // comparar comando suma
+    LDR x0, =cmdLlenar
+    LDR x1, =bufferComando
+
+    fill_loop:
+        LDRB w2, [x0], 1
+        LDRB w3, [x1], 1
+
+        CBZ w2, get_cell
+
+        CMP w2, w3
+        BNE fill_error
+
+        B fill_loop
+
+        fill_error:
+            print 1, errorFill, lenErrorFill
+            B end_proc_fill
+
+    get_cell:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+
+        CMP w2, 65
+        BLT end_proc_fill
+
+        CMP w2, 75
+        BGT end_proc_fill
+
+        SUB w16, w2, 65 // obtener indice de la columna
+
+        getRowCell:
+            LDRB w2, [x1], 1
+            
+            CMP w2, 32
+            BEQ convert_num_cell
+
+            STRB w2, [x0], 1
+            
+            B getRowCell
+
+        convert_num_cell:
+            LDR x5, =num
+            LDR x8, =num
+
+            STP x29, x30, [SP, -16]!
+
+            BL atoi
+
+            LDP x29, x30, [SP], 16
+
+            LDR x0, =rowcol
+            SUB w9, w9, 1
+            STRB w9, [x0], 1 // almacenar fila
+            STRB w16, [x0]   // almacenar columna
+
+    MOV x2, x1
+
+    STP x29, x30, [SP, -16]!
+
+    BL proc_cls_num
+
+    LDP x29, x30, [SP], 16
+
+    MOV x1, x2
+    LDR x0, =cmdHasta
+    
+    cmp_cmd_fill_2:
+        LDRB w2, [x0], 1
+        LDRB w3, [x1], 1
+
+        CBZ w2, get_cell_2
+
+        CMP w2, w3
+        BNE fill_error
+
+        B cmp_cmd_fill_2
+
+    get_cell_2:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+
+        CMP w2, 65
+        BLT end_proc_fill
+
+        CMP w2, 75
+        BGT end_proc_fill
+
+        SUB w16, w2, 65 // obtener indice de la columna
+
+        get_row_cell_2:
+            LDRB w2, [x1], 1
+            
+            CMP w2, 10
+            BEQ convert_num_cell_2
+
+            STRB w2, [x0], 1
+            
+            B get_row_cell_2
+
+        convert_num_cell_2:
+            LDR x5, =num
+            LDR x8, =num
+
+            STP x29, x30, [SP, -16]!
+
+            BL atoi
+
+            LDP x29, x30, [SP], 16
+
+    // w21 -> row(final)
+    // w22 -> col(final)
+    SUB w9, w9, 1
+    MOV w21, w9
+    MOV w22, w16
+
+    // w19  -> row (start)
+    // w20  -> col (start)
+
+    LDR x0, =rowcol
+    LDRB w19, [x0], 1
+    LDRB w20, [x0]
+
+    CMP w21, w19
+    BEQ fill_by_row
+
+    CMP w22, w20
+    BEQ fill_by_column
+
+    B fill_error
+
+    fill_by_column:
+        LDR x0, =buffer
+        ADD w18, w20, 65
+        STRB w18, [x0]
+
+        print 1, getValueForCell, lenGetValueForCell
+        print 1, buffer, 1
+
+        MOV x0, x19
+        ADD x0, x0, 1
+        LDR x1, =num
+
+        STP x29, x30, [SP, -16]!
+        BL itoa
+        LDP x29, x30, [SP], 16
+
+        STP x29, x30, [SP, -16]!
+        BL proc_cls_num
+        LDP x29, x30, [SP], 16
+
+        print 1, dpuntos, lenDpuntos
+        print 2, espacio2, lenEspacio2
+
+        read 0, buffer, 8
+        LDR x0, =buffer
+        LDR x1, =num
+
+        copy_num_col:
+            LDRB w2, [x0], 1
+
+            CMP w2, 10
+            BEQ inc_cols
+
+            STRB w2, [x1], 1
+            B copy_num_col
+
+        inc_cols:
+            LDR x5, =num
+            LDR x8, =num
+
+            STP x29, x30, [SP, -16]!
+            BL atoi
+            LDP x29, x30, [SP], 16
+
+            LDR x25, =arreglo
+            MOV x26, 6
+            MUL x26, x19, x26
+            ADD x26, x20, x26
+
+            STRH w9, [x25, x26, LSL #1]
+
+            STP x29, x30, [SP, -16]!
+            BL proc_cls_num
+            LDP x29, x30, [SP], 16
+
+            CMP w21, w19
+            BEQ end_proc_fill
+
+            ADD w19, w19, 1
+            B fill_by_column
+
+    fill_by_row:
+        LDR x0, =buffer
+        ADD w18, w20, 65
+        STRB w18, [x0]
+        
+        print 1, getValueForCell, lenGetValueForCell
+        print 1, buffer, 1
+        
+        MOV x0, x19
+        ADD x0, x0, 1
+        LDR x1, =num
+
+        STP x29, x30, [SP, -16]!
+        BL itoa
+        LDP x29, x30, [SP], 16
+
+        STP x29, x30, [SP, -16]!
+        BL proc_cls_num
+        LDP x29, x30, [SP], 16
+
+        print 1, dpuntos, lenDpuntos
+        print 2, espacio2, lenEspacio2
+
+        read 0, buffer, 8
+        LDR x0, =buffer
+        LDR x1, =num
+
+        copy_num:
+            LDRB w2, [x0], 1
+
+            CMP w2, 10
+            BEQ inc_indexs
+
+            STRB w2, [x1], 1
+            B copy_num
+
+        inc_indexs:
+            LDR x5, =num
+            LDR x8, =num
+
+            STP x29, x30, [SP, -16]!
+            BL atoi
+            LDP x29, x30, [SP], 16
+
+            LDR x25, =arreglo
+            MOV x26, 6
+            MUL x26, x19, x26
+            ADD x26, x20, x26
+
+            STRH w9, [x25, x26, LSL #1]
+
+            STP x29, x30, [SP, -16]!
+            BL proc_cls_num
+            LDP x29, x30, [SP], 16
+
+            CMP w20, w22
+            BEQ end_proc_fill
+
+            ADD w20, w20, 1
+            B fill_by_row
+
+    end_proc_fill:
+        RET
+
+
 proc_cls_num:
     LDR x0, =num
     MOV x1, 1
@@ -704,7 +984,7 @@ proc_cls_num:
 _start:
         BL print_matrix
 
-        read 0, bufferComando, 50
+        /* read 0, bufferComando, 50
 
         BL proc_import
 
@@ -724,7 +1004,13 @@ _start:
 
         read 0, bufferComando, 50
 
-        BL proc_sum
+        BL proc_sum */
+
+        read 0, bufferComando, 50
+
+        BL proc_fill
+
+        BL print_matrix
 
     exit: 
         MOV x0, 0
