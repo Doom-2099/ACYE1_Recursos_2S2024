@@ -263,17 +263,6 @@ atoi:
             NEG w9, w9
 
         a_c_end:
-            LDR x13, =count
-            LDR x13, [x13] // saltos
-            MOV x14, 2
-            MUL x14, x13, x14
-
-            STRH w9, [x12, x14] // usando 16 bits
-
-            ADD x13, x13, 1
-            LDR x12, =count
-            STR x13, [x12]
-
             RET
 
 itoa:

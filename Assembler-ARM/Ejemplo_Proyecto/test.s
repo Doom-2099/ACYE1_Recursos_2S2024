@@ -8,6 +8,7 @@
 .global closeFile
 .global proc_cls_num
 .global proc_fill
+.global proc_save
 .global _start
 
 .data
@@ -48,17 +49,27 @@ cmdLlenar:
 cmdHasta:
     .asciz "HASTA"
 
+cmdSave:
+    .asciz "GUARDAR"
+
+cmdSave2:
+    .asciz "EN"
+
 errorImport:
-    .asciz "Error En El Comando De Importación"
+    .asciz "Error En El Comando De Importación\n"
     lenError = .- errorImport
 
 errorSuma:
-    .asciz "Error En El Comando De Suma"
+    .asciz "Error En El Comando De Suma\n"
     lenErrorSuma = .- errorSuma
 
 errorFill:
     .asciz "Error En El Comando De Llenar\n"
     lenErrorFill = .- errorFill
+
+errorSave:
+    .asciz "Error En El Coamndo Guardar\n"
+    lenErrorSave = .- errorSave
 
 errorOpenFile:
     .asciz "Error al abrir el archivo\n"
@@ -119,6 +130,9 @@ op2:
     .zero 2
 
 rowcol:
+    .zero 2
+
+retorno:
     .zero 2
     
 
@@ -691,6 +705,9 @@ proc_sum:
         LDRH w3, [x1]
 
         ADD w2, w2, w3
+        LDR x0, =retorno
+        STRH w2, [x0]
+    
     end_proc_sum:
         STP x29, x30, [SP, -16]!
 
@@ -704,6 +721,8 @@ proc_sum:
         STP x29, x30, [SP, -16]!
         BL itoa
         LDP x29, x30, [SP], 16
+
+        print 1, salto, lenSalto
 
         RET
 
@@ -969,6 +988,167 @@ proc_fill:
         RET
 
 
+proc_save:
+    STP x29, x30, [SP, -16]!
+    BL proc_cls_num
+    LDP x29, x30, [SP], 16
+
+    // Comparar comando GUARDAR
+    LDR x0, =cmdSave
+    LDR x1, =bufferComando
+
+    save_loop:
+        LDRB w2, [x0], 1
+        LDRB w3, [x1], 1
+
+        CBZ w2, get_value_to_save  // Fin de la comparación
+        CMP w2, w3
+        BNE save_error  // Error si no coincide
+
+        B save_loop
+
+    save_error:
+        print 1, errorSave, lenErrorSave
+        B end_proc_save
+
+    get_value_to_save:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+
+        // Verificar si el valor a guardar es '*'
+        CMP w2, 42          
+        BEQ load_from_return 
+
+        // Verificar si el valor a guardar es un número o una celda
+        CMP w2, 65  // Comparar con 'A'
+        BGE load_from_cell_save
+        BLT load_from_number_save
+
+    load_from_return:
+        // Cargar el valor de retorno en x10
+        LDR x4, =retorno
+        LDRH w24, [x4]               // Leer el valor completo de retorno en x10
+
+        // Verificar si x10 es cero (indicando que podría no estar inicializado)
+        CBZ w24, retorno_not_initialized
+
+        // Si tiene un valor válido, continuar normalmente
+        B continue_save_command
+
+    retorno_not_initialized:
+        /* print 1, clear_screen, lenClear
+        print 1, encabezado, lenEncabezado 
+        read 0, opcion, 1 
+        // Imprimir un mensaje de error si retorno no tiene un valor válido
+        LDR x0, =errorSave
+        MOV x1, lenErrorSave
+        MOV x8, 64  // syscall de write
+        SVC 0 */
+
+        B end_proc_save
+
+    load_from_number_save:
+        // Leer el número a guardar
+        STRB w2, [x0], 1
+    read_number_save:
+        LDRB w2, [x1], 1
+        CMP w2, 32  // Fin de la lectura del número
+        BEQ convert_num_save
+
+        STRB w2, [x0], 1
+        B read_number_save
+
+    convert_num_save:
+        LDR x5, =num
+        LDR x8, =num
+        STP x29, x30, [SP, -16]!
+        BL atoi
+        LDP x29, x30, [SP], 16
+
+        // Guardar el número en w10 para la celda destino
+        MOV w10, w9
+        B continue_save_command
+
+    load_from_cell_save:
+        // Si el valor es una celda (como C4)
+        SUB w16, w2, 65  // Convertir columna a índice (A=0, B=1, ...)
+
+    get_cell_row_save:
+        LDRB w2, [x1], 1
+        CMP w2, 32  // Detectar espacio entre celda y "EN"
+        BEQ convert_cell_row_to_index_save
+
+        STRB w2, [x0], 1
+        B get_cell_row_save
+
+    convert_cell_row_to_index_save:
+        LDR x5, =num
+        LDR x8, =num
+        STP x29, x30, [SP, -16]!
+        BL atoi
+        LDP x29, x30, [SP], 16
+
+        SUB w9, w9, 1  // Ajustar índice de fila a base 0
+        LDR x25, =arreglo
+        MOV x26, 6
+        MUL x26, x9, x26
+        ADD x26, x16, x26
+        LDRH w10, [x25, x26, LSL #1]  // Obtener el valor de la celda especificada en w10
+
+    continue_save_command:
+        MOV x2, x1
+        STP x29, x30, [SP, -16]!
+        BL proc_cls_num
+        LDP x29, x30, [SP], 16
+        MOV x1, x2
+        ADD x1, x1, 1
+
+        // Comparar "EN"
+        LDR x0, =cmdSave2
+    cmp_cmd_en_save:
+        LDRB w2, [x0], 1
+        LDRB w3, [x1], 1
+        CBZ w2, get_target_cell_save
+        CMP w2, w3
+        BNE save_error
+        B cmp_cmd_en_save
+
+    get_target_cell_save:
+        LDR x0, =num
+        LDRB w2, [x1], 1
+        CMP w2, 65
+        BLT end_proc_save
+        CMP w2, 75
+        BGT end_proc_save
+        SUB w16, w2, 65  // Convertir columna a índice
+
+    get_target_row_save:
+        LDRB w2, [x1], 1
+        CMP w2, 10
+        BEQ convert_target_row_to_index_save
+        STRB w2, [x0], 1
+        B get_target_row_save
+
+    convert_target_row_to_index_save:
+        LDR x5, =num
+        LDR x8, =num
+        STP x29, x30, [SP, -16]!
+        BL atoi
+        LDP x29, x30, [SP], 16
+
+        SUB w9, w9, 1  // Ajuste de índice de fila
+        LDR x25, =arreglo
+        MOV x26, 6
+        MUL x26, x9, x26
+        ADD x26, x16, x26
+
+        // Guardar el valor en la celda especificada
+        STRH w24, [x25, x26, LSL #1]
+
+    end_proc_save:
+        RET
+
+
 proc_cls_num:
     LDR x0, =num
     MOV x1, 1
@@ -984,13 +1164,15 @@ proc_cls_num:
 _start:
         BL print_matrix
 
-        /* read 0, bufferComando, 50
+        read 0, bufferComando, 50
 
-        BL proc_import
+        // BL proc_import
 
-        BL import_data
+        //BL import_data
 
-        BL print_matrix
+        //BL print_matrix
+
+        BL proc_sum 
 
         LDR x0, =bufferComando
         MOV x1, 1
@@ -1004,11 +1186,11 @@ _start:
 
         read 0, bufferComando, 50
 
-        BL proc_sum */
+        BL proc_save
 
-        read 0, bufferComando, 50
+        //read 0, bufferComando, 50
 
-        BL proc_fill
+        //BL proc_fill
 
         BL print_matrix
 

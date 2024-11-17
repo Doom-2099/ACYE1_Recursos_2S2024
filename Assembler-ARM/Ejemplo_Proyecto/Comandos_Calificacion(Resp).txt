@@ -1,0 +1,143 @@
+---------------------------- Estudiante 1 ---------------------------------
+1.- Cargar Archivo Con Datos
+    IMPORTAR File_Cal.csv SEPARADO POR COMA
+    IMPORTAR File_Cal.tsv SEPARADO POR TABULADOR
+
+2.- Operaciones Aritmeticas
+    SUMA A1 Y B1            // 12
+    GUARDAR * EN A15
+
+    RESTA B7 Y K1           // 98479
+    GUARDAR * EN B15
+
+    MULTIPLICACION I4 Y 12  // 564 
+    GUARDAR * EN C15
+
+    DIVIDIR C7 Y F4         // 200000
+    GUARDAR * EN D15
+
+    POTENCIAR D2 Y C10      // 1
+    GUARDAR * EN E15
+
+    SUMA A6 Y 43            // 45
+    GUARDAR * EN F15
+
+3.- Operaciones Logicas
+    OLOGICO F1 Y E1                 // 55
+    GUARDAR * EN A16
+
+    YLOGICO K2 Y H6                 // 16
+    GUARDAR * EN B16
+
+    OXLOGICO B8 Y A5                // 61
+    GUARDAR * EN C16
+
+    NOLOGICO 18446744073709551586   // 29
+    GUARDAR * EN D16
+
+4.- Operaciones Sobre Rangos
+    LLENAR G15 HASTA G20
+        Valores:
+            -12
+            34
+            -21
+            16
+            -12
+    
+    LLENAR A23 HASTA E23
+        Valores:
+            -32
+            41
+            0
+            27
+            82
+
+    PROMEDIO DESDE G15 HASTA G20    // 1
+    GUARDAR * EN A17
+
+    MINIMO DESDE A23 HASTA E23      // -32
+    GUARDAR * EN B17
+
+    MAXIMO DESDE F1 HASTA F8        // 50
+    GUARDAR * EN C17
+
+4.- Exportacion Final
+    EXPORTAR 11 DESDE A HACIA output.html
+        Valores
+            COL "LETRA"
+
+    EXPORTAR 5 DESDE E HACIA output_2.html
+        Valores
+            COL "LETRA"
+
+---------------------------- Estudiante 2 ---------------------------------
+1.- Cargar Archivo Con Datos
+    IMPORTAR File_Cal.csv SEPARADO POR COMA
+    IMPORTAR File_Cal.tsv SEPARADO POR TABULADOR
+
+2.- Operaciones Aritmeticas
+    SUMA A2 Y B4                    // 55
+    GUARDAR * EN A15
+
+    RESTA C5 Y D5                   // 66
+    GUARDAR * EN B15
+
+    MULTIPLICACION K2 Y J6          // -1558332
+    GUARDAR * EN C15
+
+    DIVIDIR G3 Y F4                 // 0
+    GUARDAR * EN D15
+
+    POTENCIAR D1 Y C8               // 1
+    GUARDAR * EN E15
+
+    SUMA A6 Y 956                   // 958
+    GUARDAR * EN F15
+
+3.- Operaciones Logicas
+    OLOGICO F1 Y E1                 // 55
+    GUARDAR * EN A16
+
+    YLOGICO K2 Y H6                 // 16
+    GUARDAR * EN B16
+
+    OXLOGICO B8 Y A5                // 61
+    GUARDAR * EN C16
+
+    NOLOGICO 18446744073709551515   // 100
+    GUARDAR * EN D16
+
+4.- Operaciones Sobre Rangos
+    LLENAR G15 HASTA G20
+        Valores:
+            -94
+            284
+            -65
+            0
+            -58
+    
+    LLENAR A23 HASTA E23
+        Valores:
+            -39
+            0
+            0
+            43
+            27
+
+    PROMEDIO DESDE G15 HASTA G20        // 13
+    GUARDAR * EN A17
+
+    MINIMO DESDE A23 HASTA E23          // -39
+    GUARDAR * EN B17
+
+    MAXIMO DESDE F1 HASTA F8            // 50
+    GUARDAR * EN C17
+
+4.- Exportacion Final
+    EXPORTAR 11 DESDE A HACIA output.html
+        Valores
+            COL "LETRA"
+
+    EXPORTAR 5 DESDE E HACIA output_2.html
+        Valores
+            COL "LETRA"
